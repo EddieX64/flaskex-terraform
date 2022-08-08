@@ -6,7 +6,7 @@ locals {
   production_availability_zones = ["${var.region}a", "${var.region}b"]
 }
 
-module "Networking" {
+module "networking" {
   source               = "./modules/networking"
   region               = var.region
   environment          = var.environment
