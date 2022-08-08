@@ -7,7 +7,7 @@ locals {
 }
 
 module "networking" {
-  source               = "./modules/networking"
+  source               = "./module/networking"
   region               = var.region
   environment          = var.environment
   vpc_cidr             = var.vpc_cidr
