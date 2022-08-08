@@ -3,7 +3,7 @@ resource "random_id" "random_id_prefix" {
 }
 
 locals {
-  production_availability_zones = ["${var.region}a", "${var.region}b"]
+  production_availability_zones = ["us-east-1a", "us-east-1b"]
 }
 
 module "networking" {
