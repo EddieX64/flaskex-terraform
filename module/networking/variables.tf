@@ -21,7 +21,7 @@ variable "private_subnets_cidr" {
 }
 
 variable "region" {
-  description = "Region in which the bastion host will be launched"
+  description = "Region"
   default = "us-east-1"
 }
 

@@ -23,7 +23,7 @@ resource "aws_internet_gateway" "ig" {
 # Elastic-IP (eip) for NAT
 resource "aws_eip" "nat_eip" {
   vpc        = true
-  depends_on = [aws_internet_gateway.id]
+  depends_on = [aws_internet_gateway.ig]
 }
 
 # NAT
