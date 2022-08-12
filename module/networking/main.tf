@@ -132,11 +132,35 @@ resource "aws_security_group" "default" {
     from_port = "0"
     to_port   = "0"
     protocol  = "-1"
-    self      = "true"
+    self      = true
   }
 
   tags = {
     Environment = "${var.environment}"
+  }
+}
+
+resource "aws_security_group" "allow_http" {
+  name        = "allow_http"
+  description = "Allow HTTP inbound connections"
+  vpc_id = aws_vpc.my_vpc.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Allow HTTP Security Group"
   }
 }
 
@@ -146,8 +170,15 @@ resource "aws_launch_configuration" "web" {
   image_id = "ami-090fa75af13c156b4" # Amazon Linux 2 AMI (HVM), SSD Volume Type
   instance_type = "t2.micro"
   key_name = "us-east-1"
-
-  security_groups = [aws_security_group.default.id]
+  security_groups = [aws_security_group.allow_http.id]
+  user_data = <<EOF
+  #!/bin/bash
+  yum update -y
+  yum install -y httpd.x86_64
+  systemctl start httpd.service
+  systemctl enable httpd.service
+  echo “Hello World from $(hostname -f)” > /var/www/html/index.html
+  EOF
   # associate_public_ip_address = true
   lifecycle {
     create_before_destroy = true
@@ -160,9 +191,9 @@ resource "aws_security_group" "elb_default_sg" {
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
