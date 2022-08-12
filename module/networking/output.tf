@@ -21,3 +21,7 @@ output "security_groups_ids" {
 output "public_route_table" {
   value = aws_route_table.public.id
 }
+
+output "elb_dns_name" {
+  value = aws_elb.web_elb.dns_name
+}

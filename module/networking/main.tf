@@ -119,9 +119,7 @@ resource "aws_security_group" "default" {
   name        = "${var.environment}-default-sg"
   description = "Default SG to alllow traffic from the VPC"
   vpc_id      = aws_vpc.vpc.id
-  depends_on = [
-    aws_vpc.vpc
-  ]
+  depends_on = [aws_vpc.vpc]
 
     ingress {
     from_port = "0"
@@ -139,5 +137,89 @@ resource "aws_security_group" "default" {
 
   tags = {
     Environment = "${var.environment}"
+  }
+}
+
+resource "aws_launch_configuration" "web" {
+  name_prefix = "ec2-test"
+
+  image_id = "ami-090fa75af13c156b4" # Amazon Linux 2 AMI (HVM), SSD Volume Type
+  instance_type = "t2.micro"
+  key_name = "us-east-1"
+
+  security_groups = [aws_security_group.default.id]
+  # associate_public_ip_address = true
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_security_group" "elb_default_sg" {
+  name        = "elb_http"
+  description = "Allow all traffic to instances through Elastic Load Balancer"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Allow everything through ELB Security Group"
+  }
+}
+
+resource "aws_elb" "web_elb" {
+  name = "web-elb"
+  security_groups = [aws_security_group.elb_default_sg.id]
+  subnets = "${aws_subnet.public_subnet.*.id}"
+
+
+  cross_zone_load_balancing   = true
+
+  health_check {
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+    timeout = 3
+    interval = 30
+    target = "HTTP:80/"
+  }
+
+  listener {
+    lb_port = 80
+    lb_protocol = "http"
+    instance_port = "80"
+    instance_protocol = "http"
+  }
+}
+
+resource "aws_autoscaling_group" "web" {
+  name = "${aws_launch_configuration.web.name}-asg"
+  min_size             = 1
+  desired_capacity     = 1
+  max_size             = 1
+  health_check_type    = "ELB"
+  load_balancers = [aws_elb.web_elb.id]
+  launch_configuration = aws_launch_configuration.web.name
+  vpc_zone_identifier  = "${aws_subnet.private_subnet.*.id}"
+
+  # Required to redeploy without an outage.
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "web"
+    propagate_at_launch = true
   }
 }

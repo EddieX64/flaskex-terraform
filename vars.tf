@@ -35,3 +35,8 @@ variable "availability_zones" {
   description = "AZ in which all the resources will be deployed"
   default = ["us-east-1a","us-east-1b"]
 }
+
+variable "ami_id" {
+  type = string
+  description = ""
+}
