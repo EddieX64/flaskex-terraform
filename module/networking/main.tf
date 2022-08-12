@@ -117,7 +117,7 @@ resource "aws_route_table_association" "private" {
 # Security group to allow inbound http on EC2 instances
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
-  description = "Allow HTTP inbound connections"
+  description = "Allow http inbound connections"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -135,7 +135,7 @@ resource "aws_security_group" "allow_http" {
   }
 
   tags = {
-    Name = "Allow HTTP Security Group"
+    Name = "Allow http Security Group"
   }
 }
 
@@ -182,7 +182,7 @@ resource "aws_security_group" "elb_default_sg" {
   }
 
   tags = {
-    Name = "Allow everything through ELB Security Group"
+    Name = "Allow http through ELB Security Group"
   }
 }
 
