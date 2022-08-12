@@ -10,11 +10,11 @@ output "private_subnets_id" {
   value = ["${aws_subnet.private_subnet.*.id}"]
 }
 
-output "security_groups_ids" {
+output "ec2_security_groups_id" {
   value = ["${aws_security_group.allow_http.id}"]
 }
 
-output "security_groups_ids" {
+output "elb_security_groups_id" {
   value = ["${aws_security_group.elb_default_sg.id}"]
 }
 
