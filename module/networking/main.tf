@@ -114,32 +114,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-# Default Security Group of VPC
-resource "aws_security_group" "default" {
-  name        = "${var.environment}-default-sg"
-  description = "Default SG to alllow traffic from the VPC"
-  vpc_id      = aws_vpc.vpc.id
-  depends_on = [aws_vpc.vpc]
-
-    ingress {
-    from_port = "0"
-    to_port   = "0"
-    protocol  = "-1"
-    self      = true
-  }
-
-  egress {
-    from_port = "0"
-    to_port   = "0"
-    protocol  = "-1"
-    self      = true
-  }
-
-  tags = {
-    Environment = "${var.environment}"
-  }
-}
-
+# Security group to allow inbound http on EC2 instances
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow HTTP inbound connections"
@@ -164,10 +139,11 @@ resource "aws_security_group" "allow_http" {
   }
 }
 
+# Launch configuration for autoscaling group
 resource "aws_launch_configuration" "web" {
   name_prefix = "ec2-test"
 
-  image_id = "ami-090fa75af13c156b4" # Amazon Linux 2 AMI (HVM), SSD Volume Type
+  image_id = "ami-090fa75af13c156b4" # Amazon Linux 2 AMI (HVM)
   instance_type = "t2.micro"
   key_name = "us-east-1"
   security_groups = [aws_security_group.allow_http.id]
@@ -185,6 +161,7 @@ resource "aws_launch_configuration" "web" {
   }
 }
 
+# Security group for Elastic Load Balancer
 resource "aws_security_group" "elb_default_sg" {
   name        = "elb_http"
   description = "Allow all traffic to instances through Elastic Load Balancer"
@@ -209,6 +186,7 @@ resource "aws_security_group" "elb_default_sg" {
   }
 }
 
+# Elastic Load Balancer with cross-zone load balancing
 resource "aws_elb" "web_elb" {
   name = "web-elb"
   security_groups = [aws_security_group.elb_default_sg.id]
@@ -233,6 +211,7 @@ resource "aws_elb" "web_elb" {
   }
 }
 
+# Autoscaling group
 resource "aws_autoscaling_group" "web" {
   name = "${aws_launch_configuration.web.name}-asg"
   min_size             = 1
