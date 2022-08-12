@@ -143,7 +143,7 @@ resource "aws_security_group" "default" {
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow HTTP inbound connections"
-  vpc_id = aws_vpc.my_vpc.id
+  vpc_id = aws_vpc.vpc.id
 
   ingress {
     from_port   = 80
