@@ -146,14 +146,6 @@ resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow http inbound connections"
   vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   egress {
     from_port       = 0
     to_port         = 0
@@ -166,15 +158,25 @@ resource "aws_security_group" "allow_http" {
   }
 }
 
+# Allow http on EC2 from Elastic Load Balancer only
+resource "aws_security_group_rule" "http_ingress_rule" {
+  type                      = "ingress"
+  from_port                 = 80
+  to_port                   = 80
+  protocol                  = "tcp"
+  security_group_id         = aws_security_group.allow_http.id
+  source_security_group_id  = aws_security_group.elb_default_sg.id
+}
+
 # Launch configuration for autoscaling group
 resource "aws_launch_configuration" "web" {
   name_prefix = "ec2-test"
 
-  image_id = "ami-090fa75af13c156b4" # Amazon Linux 2 AMI (HVM)
-  instance_type = "t2.micro"
-  key_name = "us-east-1"
-  security_groups = [aws_security_group.allow_http.id]
-  user_data = <<EOF
+  image_id            = "ami-090fa75af13c156b4" # Amazon Linux 2 AMI (HVM)
+  instance_type       = "t2.micro"
+  key_name            = "us-east-1"
+  security_groups     = [aws_security_group.allow_http.id]
+  user_data           = <<EOF
   #!/bin/bash
   yum update -y
   yum install -y httpd.x86_64
@@ -192,7 +194,7 @@ resource "aws_launch_configuration" "web" {
 resource "aws_security_group" "elb_default_sg" {
   name        = "elb_http"
   description = "Allow all traffic to instances through Elastic Load Balancer"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id      = aws_vpc.vpc.id
 
   ingress {
     from_port   = 80
@@ -215,25 +217,25 @@ resource "aws_security_group" "elb_default_sg" {
 
 # Elastic Load Balancer with cross-zone load balancing
 resource "aws_elb" "web_elb" {
-  name = "web-elb"
+  name            = "web-elb"
   security_groups = [aws_security_group.elb_default_sg.id]
-  subnets = "${aws_subnet.public_subnet.*.id}"
+  subnets         = "${aws_subnet.public_subnet.*.id}"
 
 
-  cross_zone_load_balancing   = true
+  cross_zone_load_balancing = true
 
   health_check {
-    healthy_threshold = 2
+    healthy_threshold   = 2
     unhealthy_threshold = 2
-    timeout = 3
-    interval = 30
-    target = "HTTP:80/"
+    timeout             = 5
+    interval            = 60
+    target              = "HTTP:80/"
   }
 
   listener {
-    lb_port = 80
-    lb_protocol = "http"
-    instance_port = "80"
+    lb_port           = 80
+    lb_protocol       = "http"
+    instance_port     = "80"
     instance_protocol = "http"
   }
 }
